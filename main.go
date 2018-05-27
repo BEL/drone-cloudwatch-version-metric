@@ -10,44 +10,6 @@ import (
     "github.com/aws/aws-sdk-go/service/cloudwatch"
 )
 
-func main() {
-    //Variable setting  
-    var metricData []*cloudwatch.MetricDatum
-    var ns = flag.String("namespace", "TestSpace", "CloudWatch metric namespace")//TODO:Change namespace to something meaningful.
-    var dim []*cloudwatch.Dimension
-    var err error
-
-    // Hardcoded 
-    var deployment float64 = 1 //TODO:Remove after functionality test"
-    var serviceName = "Service name"
-    var serviceNameValue = "stg-service-test"
-    var serviceEnvironment = "Environment"
-    var serviceEnvironmentValue = "staging"
-
-    //Dimensions of the metrica - Service name and environment
-    name := cloudwatch.Dimension{
-            Name:  aws.String(serviceName),
-            Value: aws.String(serviceNameValue),
-        }
-    env := cloudwatch.Dimension{
-            Name:  aws.String(serviceEnvironment),
-            Value: aws.String(serviceEnvironmentValue),
-    }
-    dim = append(dim,&name,&env)
-
-    //Metric data addition
-    metricData, err = addMetric("Deployment", "Count", deployment, dim, metricData)
-        if err != nil {
-            log.Fatal("Cannot add deployment metric: ", err)
-        }
-
-    err = putMetric(metricData, *ns, "us-east-1") //TODO:Get region from credentials.
-        if err != nil {
-            log.Fatal("Can't put CloudWatch Metric",err)
-        }
-    print("Successfully added")
-}
-
 func addMetric(name, unit string, value float64, dimensions []*cloudwatch.Dimension, metricData []*cloudwatch.MetricDatum) (ret []*cloudwatch.MetricDatum, err error) {
     _metric := cloudwatch.MetricDatum{
         MetricName: aws.String(name),
@@ -55,7 +17,6 @@ func addMetric(name, unit string, value float64, dimensions []*cloudwatch.Dimens
         Value:      aws.Float64(value),
         Dimensions: dimensions,
     }
-    print("metricname",name,"unit",unit,"value",value,"dimensions",dimensions)
     metricData = append(metricData, &_metric)
     return metricData, nil
 }
@@ -80,4 +41,42 @@ func putMetric(metricdata []*cloudwatch.MetricDatum, namespace, region string) e
     }
     log.Println(awsutil.StringValue(resp))
     return nil
+}
+
+func main() {
+    //Variable setting  
+    var metricData []*cloudwatch.MetricDatum
+    var ns = flag.String("namespace", "TestSpace", "CloudWatch metric namespace")//TODO:Change namespace to something meaningful.
+    var dim []*cloudwatch.Dimension
+    var err error
+
+    // Hardcoded 
+    var deployment float64 = os.Getenv("BUILD_NUMBER")
+    var serviceName = "Service name"
+    var serviceNameValue = os.Getenv("SERVICE_NAME")
+    var serviceEnvironment = "Environment"
+    var serviceEnvironmentValue = os.Getenv("SERVICE_ENV")
+
+    //Dimensions of the metrica - Service name and environment
+    name := cloudwatch.Dimension{
+            Name:  aws.String(serviceName),
+            Value: aws.String(serviceNameValue),
+        }
+    env := cloudwatch.Dimension{
+            Name:  aws.String(serviceEnvironment),
+            Value: aws.String(serviceEnvironmentValue),
+    }
+    dim = append(dim,&name,&env)
+
+    //Metric data addition
+    metricData, err = addMetric("Deployment", "Count", deployment, dim, metricData)
+        if err != nil {
+            log.Fatal("Cannot add deployment metric: ", err)
+        }
+
+    err = putMetric(metricData, *ns, "us-east-1") //TODO:Get region from credentials.
+        if err != nil {
+            log.Fatal("Can't put CloudWatch Metric",err)
+        }
+    print("Operation finished successfuly.")
 }
