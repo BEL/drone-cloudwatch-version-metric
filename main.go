@@ -5,7 +5,6 @@ import (
     "fmt"
     "flag"
     "os"
-    "reflect"
     "strconv"
     "github.com/aws/aws-sdk-go/aws"
     "github.com/aws/aws-sdk-go/aws/awserr"
