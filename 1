@@ -1,9 +1,8 @@
 package main
-
 import (
     "log"
     "fmt"
-    "flag"
+    //"flag"
     "os"
     "reflect"
     "strconv"
@@ -13,13 +12,6 @@ import (
     "github.com/aws/aws-sdk-go/aws/session"
     "github.com/aws/aws-sdk-go/service/cloudwatch"
 )
-
-func getEnv(key, fallback string) string {
-    if value, ok := os.LookupEnv(key); ok {
-        return value
-    }
-    return fallback
-}
 
 func addMetric(name, unit string, value float64, dimensions []*cloudwatch.Dimension, metricData []*cloudwatch.MetricDatum) (ret []*cloudwatch.MetricDatum, err error) {
     _metric := cloudwatch.MetricDatum{
@@ -55,19 +47,20 @@ func putMetric(metricdata []*cloudwatch.MetricDatum, namespace, region string) e
 }
 
 func main() {
+    session := session.New()
+    print(reflect.TypeOf(session))
     //Variable setting  
     var metricData []*cloudwatch.MetricDatum
-    var ns = flag.String("namespace", "TestSpace", "CloudWatch metric namespace")//TODO:Change namespace to something meaningful.
+    //var ns = flag.String("namespace", "TestSpace", "CloudWatch metric namespace")//TODO:Change namespace to something meaningful.
     var dim []*cloudwatch.Dimension
     var err error
-
     //Dimensions of the metrica - Service name and environment
     var serviceName = "Service name"
-    var serviceNameValue = getEnv("PLUGIN_SERVICE_NAME","my-service")
+    var serviceNameValue = os.Getenv("PLUGIN_SERVICE_NAME")
     var serviceEnvironment = "Environment"
-    var serviceEnvironmentValue = getEnv("PLUGIN_SERVICE_ENV","test")
+    var serviceEnvironmentValue = os.Getenv("PLUGIN_SERVICE_ENV")
 
-    deployment , err := strconv.ParseFloat(getEnv("PLUGIN_BUILD_NUMBER","0"),64)
+    deployment , err := strconv.ParseFloat(os.Getenv("PLUGIN_BUILD_NUMBER"),64)
     if err != nil {
          log.Fatal("Invalid build number:", err)
     }
@@ -88,9 +81,9 @@ func main() {
             log.Fatal("Cannot add deployment metric: ", err)
         }
 
-    err = putMetric(metricData, *ns, getEnv("PLUGIN_AWS_REGION","us-east-1"))
+    //err = putMetric(metricData, *ns, "us-east-1") //TODO:Get region from credentials.
         if err != nil {
-            log.Fatal("Cannot put metric data due to unexpected error.",err)
+            log.Fatal("Can't put CloudWatch Metric",err)
         }
-    print("Operation completed successfuly.")
+    print("Operation finished successfuly.")
 }
