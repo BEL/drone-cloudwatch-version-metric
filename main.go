@@ -13,22 +13,39 @@ import (
 func main() {
     //Variable setting  
     var metricData []*cloudwatch.MetricDatum
-    var ns = flag.String("TestSpace", "Linux/System", "CloudWatch metric namespace") 
-    var err = putMetric(metricData, *ns, "us-east-1")
+    var ns = flag.String("namespace", "TestSpace", "CloudWatch metric namespace")//TODO:Change namespace to something meaningful.
+    var dim []*cloudwatch.Dimension
+    var err error
 
-    dim := cloudwatch.Dimension{
+    // Hardcoded 
+    var deployment float64 = 1 //TODO:Remove after functionality test"
+    var serviceName = "Service name"
+    var serviceNameValue = "stg-service-test"
+    var serviceEnvironment = "Environment"
+    var serviceEnvironmentValue = "staging"
+
+    //Dimensions of the metrica - Service name and environment
+    name := cloudwatch.Dimension{
             Name:  aws.String(serviceName),
-            Environment: aws.String(serviceEnvironment),
+            Value: aws.String(serviceNameValue),
         }
+    env := cloudwatch.Dimension{
+            Name:  aws.String(serviceEnvironment),
+            Value: aws.String(serviceEnvironmentValue),
+    }
+    dim = append(dim,&name,&env)
+
     //Metric data addition
-    metricData, err = addMetric("Deployment", "Count", deployment, dims, metricData)
+    metricData, err = addMetric("Deployment", "Count", deployment, dim, metricData)
         if err != nil {
-            log.Fatal("Can't add memory available metric: ", err)
+            log.Fatal("Cannot add deployment metric: ", err)
         }
 
-    if err != nil {
-        log.Fatal("Can't put CloudWatch Metric",err)
-    }
+    err = putMetric(metricData, *ns, "us-east-1") //TODO:Get region from credentials.
+        if err != nil {
+            log.Fatal("Can't put CloudWatch Metric",err)
+        }
+    print("Successfully added")
 }
 
 func addMetric(name, unit string, value float64, dimensions []*cloudwatch.Dimension, metricData []*cloudwatch.MetricDatum) (ret []*cloudwatch.MetricDatum, err error) {
