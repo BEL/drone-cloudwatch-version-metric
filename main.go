@@ -91,5 +91,5 @@ func main() {
         if err != nil {
             log.Fatal("Cannot put metric data due to unexpected error.",err)
         }
-    print("Operation completed successfuly.")
+    print("Operation completed successfully.")
 }
